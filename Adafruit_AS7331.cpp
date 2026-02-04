@@ -1,3 +1,23 @@
+/*!
+ * @file Adafruit_AS7331.cpp
+ *
+ * @mainpage Adafruit AS7331 UV Spectral Sensor Library
+ *
+ * @section intro_sec Introduction
+ *
+ * This is a library for the AS7331 UV Spectral Sensor from ams-OSRAM.
+ * It provides UVA, UVB, and UVC measurements with configurable gain
+ * and integration time, plus irradiance conversion to µW/cm².
+ *
+ * @section author Author
+ *
+ * Written by Limor Fried/Ladyada for Adafruit Industries.
+ *
+ * @section license License
+ *
+ * BSD license, all text above must be included in any redistribution
+ */
+
 #include "Adafruit_AS7331.h"
 
 /**
@@ -15,8 +35,17 @@
 #define AS7331_SENS_UVB 347.0f
 #define AS7331_SENS_UVC 794.0f
 
+/**
+ * @brief Construct a new Adafruit_AS7331 object
+ */
 Adafruit_AS7331::Adafruit_AS7331() {}
 
+/**
+ * @brief Initialize the AS7331 sensor
+ * @param wire Pointer to the I2C bus
+ * @param addr I2C address of the sensor
+ * @return true if initialization succeeded, false otherwise
+ */
 bool Adafruit_AS7331::begin(TwoWire *wire, uint8_t addr) {
   if (_i2c_dev) {
     delete _i2c_dev;
@@ -55,6 +84,10 @@ bool Adafruit_AS7331::begin(TwoWire *wire, uint8_t addr) {
   return (part_id == AS7331_PART_ID);
 }
 
+/**
+ * @brief Perform a software reset
+ * @return true if the reset command succeeded, false otherwise
+ */
 bool Adafruit_AS7331::reset(void) {
   Adafruit_BusIO_Register osr(_i2c_dev, AS7331_REG_OSR);
   if (!osr.write(0x0A)) { // SW_RES=1, DOS=010 for config state
@@ -64,6 +97,10 @@ bool Adafruit_AS7331::reset(void) {
   return true;
 }
 
+/**
+ * @brief Read the device ID
+ * @return Device part ID register value
+ */
 uint8_t Adafruit_AS7331::getDeviceID(void) {
   Adafruit_BusIO_Register agen(_i2c_dev, AS7331_REG_AGEN);
   uint8_t id = 0;
@@ -71,12 +108,21 @@ uint8_t Adafruit_AS7331::getDeviceID(void) {
   return id;
 }
 
+/**
+ * @brief Get the current measurement mode
+ * @return Current measurement mode
+ */
 as7331_mode_t Adafruit_AS7331::getMeasurementMode(void) {
   Adafruit_BusIO_Register creg3(_i2c_dev, AS7331_REG_CREG3);
   Adafruit_BusIO_RegisterBits mode_bits(&creg3, 2, 6);
   return (as7331_mode_t)mode_bits.read();
 }
 
+/**
+ * @brief Enter or exit power-down mode
+ * @param pd True to power down, false to wake
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::powerDown(bool pd) {
   Adafruit_BusIO_Register osr(_i2c_dev, AS7331_REG_OSR);
   Adafruit_BusIO_RegisterBits ss_bit(&osr, 1, 7);
@@ -107,12 +153,22 @@ bool Adafruit_AS7331::powerDown(bool pd) {
   return true;
 }
 
+/**
+ * @brief Set the measurement mode
+ * @param mode Measurement mode selection
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setMeasurementMode(as7331_mode_t mode) {
   Adafruit_BusIO_Register creg3(_i2c_dev, AS7331_REG_CREG3);
   Adafruit_BusIO_RegisterBits mode_bits(&creg3, 2, 6);
   return mode_bits.write(mode);
 }
 
+/**
+ * @brief Set the sensor gain
+ * @param gain Gain setting
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setGain(as7331_gain_t gain) {
   Adafruit_BusIO_Register creg1(_i2c_dev, AS7331_REG_CREG1);
   Adafruit_BusIO_RegisterBits gain_bits(&creg1, 4, 4);
@@ -123,12 +179,21 @@ bool Adafruit_AS7331::setGain(as7331_gain_t gain) {
   return false;
 }
 
+/**
+ * @brief Get the current sensor gain
+ * @return Gain setting
+ */
 as7331_gain_t Adafruit_AS7331::getGain(void) {
   Adafruit_BusIO_Register creg1(_i2c_dev, AS7331_REG_CREG1);
   Adafruit_BusIO_RegisterBits gain_bits(&creg1, 4, 4);
   return (as7331_gain_t)gain_bits.read();
 }
 
+/**
+ * @brief Set the integration time
+ * @param time Integration time setting
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setIntegrationTime(as7331_time_t time) {
   Adafruit_BusIO_Register creg1(_i2c_dev, AS7331_REG_CREG1);
   Adafruit_BusIO_RegisterBits time_bits(&creg1, 4, 0);
@@ -139,42 +204,74 @@ bool Adafruit_AS7331::setIntegrationTime(as7331_time_t time) {
   return false;
 }
 
+/**
+ * @brief Get the current integration time
+ * @return Integration time setting
+ */
 as7331_time_t Adafruit_AS7331::getIntegrationTime(void) {
   Adafruit_BusIO_Register creg1(_i2c_dev, AS7331_REG_CREG1);
   Adafruit_BusIO_RegisterBits time_bits(&creg1, 4, 0);
   return (as7331_time_t)time_bits.read();
 }
 
+/**
+ * @brief Set the clock frequency
+ * @param clock Clock frequency setting
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setClockFrequency(as7331_clock_t clock) {
   Adafruit_BusIO_Register creg3(_i2c_dev, AS7331_REG_CREG3);
   Adafruit_BusIO_RegisterBits cclk(&creg3, 2, 0);
   return cclk.write(clock);
 }
 
+/**
+ * @brief Get the clock frequency setting
+ * @return Clock frequency setting
+ */
 as7331_clock_t Adafruit_AS7331::getClockFrequency(void) {
   Adafruit_BusIO_Register creg3(_i2c_dev, AS7331_REG_CREG3);
   Adafruit_BusIO_RegisterBits cclk(&creg3, 2, 0);
   return (as7331_clock_t)cclk.read();
 }
 
+/**
+ * @brief Read the UVA channel counts
+ * @return UVA measurement counts
+ */
 uint16_t Adafruit_AS7331::readUVA(void) {
   uint16_t value = 0;
   readRegister(AS7331_REG_MRES1, &value);
   return value;
 }
 
+/**
+ * @brief Read the UVB channel counts
+ * @return UVB measurement counts
+ */
 uint16_t Adafruit_AS7331::readUVB(void) {
   uint16_t value = 0;
   readRegister(AS7331_REG_MRES2, &value);
   return value;
 }
 
+/**
+ * @brief Read the UVC channel counts
+ * @return UVC measurement counts
+ */
 uint16_t Adafruit_AS7331::readUVC(void) {
   uint16_t value = 0;
   readRegister(AS7331_REG_MRES3, &value);
   return value;
 }
 
+/**
+ * @brief Read all UV channels
+ * @param uva Optional storage for UVA counts
+ * @param uvb Optional storage for UVB counts
+ * @param uvc Optional storage for UVC counts
+ * @return true on success, false on read failure
+ */
 bool Adafruit_AS7331::readAllUV(uint16_t *uva, uint16_t *uvb, uint16_t *uvc) {
   uint8_t buffer[6] = {0};
   if (!readRegisters(AS7331_REG_MRES1, buffer, sizeof(buffer))) {
@@ -195,7 +292,7 @@ bool Adafruit_AS7331::readAllUV(uint16_t *uva, uint16_t *uvb, uint16_t *uvc) {
 }
 
 /**
- * Convert raw ADC counts to irradiance in µW/cm².
+ * @brief Convert raw ADC counts to irradiance in µW/cm²
  *
  * Algorithm from AS7331 datasheet (DS001047 v4-00), Section 7.4
  * "Measurement Result".
@@ -235,8 +332,7 @@ float Adafruit_AS7331::_countsToIrradiance(uint16_t counts,
 }
 
 /**
- * Read UVA channel and convert to irradiance (µW/cm²).
- * Uses cached gain/time settings for conversion.
+ * @brief Read UVA and convert to irradiance (µW/cm²)
  * @return UVA irradiance in µW/cm²
  */
 float Adafruit_AS7331::readUVA_uWcm2(void) {
@@ -245,8 +341,7 @@ float Adafruit_AS7331::readUVA_uWcm2(void) {
 }
 
 /**
- * Read UVB channel and convert to irradiance (µW/cm²).
- * Uses cached gain/time settings for conversion.
+ * @brief Read UVB and convert to irradiance (µW/cm²)
  * @return UVB irradiance in µW/cm²
  */
 float Adafruit_AS7331::readUVB_uWcm2(void) {
@@ -255,8 +350,7 @@ float Adafruit_AS7331::readUVB_uWcm2(void) {
 }
 
 /**
- * Read UVC channel and convert to irradiance (µW/cm²).
- * Uses cached gain/time settings for conversion.
+ * @brief Read UVC and convert to irradiance (µW/cm²)
  * @return UVC irradiance in µW/cm²
  */
 float Adafruit_AS7331::readUVC_uWcm2(void) {
@@ -265,12 +359,11 @@ float Adafruit_AS7331::readUVC_uWcm2(void) {
 }
 
 /**
- * Read all UV channels and convert to irradiance (µW/cm²).
- * Uses cached gain/time settings for conversion.
- * @param uva Optional storage for UVA irradiance.
- * @param uvb Optional storage for UVB irradiance.
- * @param uvc Optional storage for UVC irradiance.
- * @return True on success, false on read failure.
+ * @brief Read all UV channels and convert to irradiance (µW/cm²)
+ * @param uva Optional storage for UVA irradiance
+ * @param uvb Optional storage for UVB irradiance
+ * @param uvc Optional storage for UVC irradiance
+ * @return True on success, false on read failure
  */
 bool Adafruit_AS7331::readAllUV_uWcm2(float *uva, float *uvb, float *uvc) {
   uint16_t uva_raw = 0;
@@ -291,6 +384,13 @@ bool Adafruit_AS7331::readAllUV_uWcm2(float *uva, float *uvb, float *uvc) {
   return true;
 }
 
+/**
+ * @brief Perform a single measurement in command mode
+ * @param uva Optional storage for UVA counts
+ * @param uvb Optional storage for UVB counts
+ * @param uvc Optional storage for UVC counts
+ * @return true on success, false on timeout or read failure
+ */
 bool Adafruit_AS7331::oneShot(uint16_t *uva, uint16_t *uvb, uint16_t *uvc) {
   // Ensure we're in CMD mode and config state
   powerDown(true);
@@ -313,6 +413,13 @@ bool Adafruit_AS7331::oneShot(uint16_t *uva, uint16_t *uvb, uint16_t *uvc) {
   return readAllUV(uva, uvb, uvc);
 }
 
+/**
+ * @brief Perform a single measurement and convert to irradiance (µW/cm²)
+ * @param uva Optional storage for UVA irradiance
+ * @param uvb Optional storage for UVB irradiance
+ * @param uvc Optional storage for UVC irradiance
+ * @return true on success, false on timeout or read failure
+ */
 bool Adafruit_AS7331::oneShot_uWcm2(float *uva, float *uvb, float *uvc) {
   uint16_t uva_raw, uvb_raw, uvc_raw;
   if (!oneShot(&uva_raw, &uvb_raw, &uvc_raw)) {
@@ -330,6 +437,10 @@ bool Adafruit_AS7331::oneShot_uWcm2(float *uva, float *uvb, float *uvc) {
   return true;
 }
 
+/**
+ * @brief Read the sensor temperature in degrees Celsius
+ * @return Temperature in degrees Celsius
+ */
 float Adafruit_AS7331::readTemperature(void) {
   uint16_t raw = 0;
   readRegister(AS7331_REG_TEMP, &raw);
@@ -337,6 +448,10 @@ float Adafruit_AS7331::readTemperature(void) {
   return (raw * 0.05f) - 66.9f;
 }
 
+/**
+ * @brief Check if new data is ready
+ * @return true if data is ready, false otherwise
+ */
 bool Adafruit_AS7331::isDataReady(void) {
   uint16_t status = 0;
   if (!readRegister(AS7331_REG_OSR, &status)) {
@@ -347,40 +462,70 @@ bool Adafruit_AS7331::isDataReady(void) {
   return !not_ready;
 }
 
+/**
+ * @brief Read the status register byte
+ * @return Status register value
+ */
 uint8_t Adafruit_AS7331::getStatus(void) {
   uint16_t val = 0;
   readRegister(AS7331_REG_OSR, &val);
   return (val >> 8) & 0xFF; // STATUS is high byte
 }
 
+/**
+ * @brief Check for any overflow condition
+ * @return true if an overflow condition is present, false otherwise
+ */
 bool Adafruit_AS7331::hasOverflow(void) {
   uint8_t status = getStatus();
   return (status & (AS7331_STATUS_OUTCONVOF | AS7331_STATUS_MRESOF |
                     AS7331_STATUS_ADCOF)) != 0;
 }
 
+/**
+ * @brief Check if new data is available
+ * @return true if new data is available, false otherwise
+ */
 bool Adafruit_AS7331::hasNewData(void) {
   uint8_t status = getStatus();
   return (status & AS7331_STATUS_NDATA) != 0;
 }
 
+/**
+ * @brief Configure the READY pin drive mode
+ * @param openDrain True for open-drain, false for push-pull
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setReadyPinOpenDrain(bool openDrain) {
   Adafruit_BusIO_Register creg3(_i2c_dev, AS7331_REG_CREG3);
   Adafruit_BusIO_RegisterBits rdyod(&creg3, 1, 3);
   return rdyod.write(openDrain);
 }
 
+/**
+ * @brief Get the READY pin drive mode
+ * @return true if open-drain, false if push-pull
+ */
 bool Adafruit_AS7331::getReadyPinOpenDrain(void) {
   Adafruit_BusIO_Register creg3(_i2c_dev, AS7331_REG_CREG3);
   Adafruit_BusIO_RegisterBits rdyod(&creg3, 1, 3);
   return rdyod.read();
 }
 
+/**
+ * @brief Set the break time for SYNS/SYND modes
+ * @param breakTime Break time register value
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setBreakTime(uint8_t breakTime) {
   Adafruit_BusIO_Register brk(_i2c_dev, AS7331_REG_BREAK);
   return brk.write(breakTime);
 }
 
+/**
+ * @brief Read the break time register
+ * @return Break time register value
+ */
 uint8_t Adafruit_AS7331::getBreakTime(void) {
   Adafruit_BusIO_Register brk(_i2c_dev, AS7331_REG_BREAK);
   uint8_t val = 0;
@@ -388,11 +533,20 @@ uint8_t Adafruit_AS7331::getBreakTime(void) {
   return val;
 }
 
+/**
+ * @brief Set the edge count for SYND mode
+ * @param edges Edge count value
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setEdgeCount(uint8_t edges) {
   Adafruit_BusIO_Register reg(_i2c_dev, AS7331_REG_EDGES);
   return reg.write(edges);
 }
 
+/**
+ * @brief Get the edge count register value
+ * @return Edge count register value
+ */
 uint8_t Adafruit_AS7331::getEdgeCount(void) {
   Adafruit_BusIO_Register reg(_i2c_dev, AS7331_REG_EDGES);
   uint8_t val = 0;
@@ -400,29 +554,51 @@ uint8_t Adafruit_AS7331::getEdgeCount(void) {
   return val;
 }
 
+/**
+ * @brief Start measurements by setting SS
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::startMeasurement(void) {
   Adafruit_BusIO_Register osr(_i2c_dev, AS7331_REG_OSR);
   Adafruit_BusIO_RegisterBits ss(&osr, 1, 7);
   return ss.write(1);
 }
 
+/**
+ * @brief Stop measurements by clearing SS
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::stopMeasurement(void) {
   Adafruit_BusIO_Register osr(_i2c_dev, AS7331_REG_OSR);
   Adafruit_BusIO_RegisterBits ss(&osr, 1, 7);
   return ss.write(0);
 }
 
+/**
+ * @brief Check if data was lost
+ * @return true if data was lost, false otherwise
+ */
 bool Adafruit_AS7331::hasLostData(void) {
   uint8_t status = getStatus();
   return (status & AS7331_STATUS_LDATA) != 0;
 }
 
+/**
+ * @brief Enable or disable the divider
+ * @param enable True to enable, false to disable
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::enableDivider(bool enable) {
   Adafruit_BusIO_Register creg2(_i2c_dev, AS7331_REG_CREG2);
   Adafruit_BusIO_RegisterBits en_div(&creg2, 1, 3);
   return en_div.write(enable);
 }
 
+/**
+ * @brief Set the divider value
+ * @param div Divider setting (0-7)
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setDivider(uint8_t div) {
   if (div > 7) {
     return false;
@@ -432,34 +608,66 @@ bool Adafruit_AS7331::setDivider(uint8_t div) {
   return div_bits.write(div);
 }
 
+/**
+ * @brief Get the divider value
+ * @return Divider setting
+ */
 uint8_t Adafruit_AS7331::getDivider(void) {
   Adafruit_BusIO_Register creg2(_i2c_dev, AS7331_REG_CREG2);
   Adafruit_BusIO_RegisterBits div_bits(&creg2, 3, 0);
   return div_bits.read();
 }
 
+/**
+ * @brief Set standby mode
+ * @param enable True to enable standby, false to disable
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::setStandby(bool enable) {
   Adafruit_BusIO_Register creg3(_i2c_dev, AS7331_REG_CREG3);
   Adafruit_BusIO_RegisterBits sb(&creg3, 1, 4);
   return sb.write(enable);
 }
 
+/**
+ * @brief Get standby mode state
+ * @return true if standby is enabled, false otherwise
+ */
 bool Adafruit_AS7331::getStandby(void) {
   Adafruit_BusIO_Register creg3(_i2c_dev, AS7331_REG_CREG3);
   Adafruit_BusIO_RegisterBits sb(&creg3, 1, 4);
   return sb.read();
 }
 
+/**
+ * @brief Read an 8-bit register
+ * @param reg Register address
+ * @param value Pointer to storage for the read value
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::readRegister(uint8_t reg, uint8_t *value) {
   Adafruit_BusIO_Register bus_reg(_i2c_dev, reg);
   return bus_reg.read(value);
 }
 
+/**
+ * @brief Read a 16-bit register
+ * @param reg Register address
+ * @param value Pointer to storage for the read value
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::readRegister(uint8_t reg, uint16_t *value) {
   Adafruit_BusIO_Register bus_reg(_i2c_dev, reg, 2, LSBFIRST);
   return bus_reg.read(value);
 }
 
+/**
+ * @brief Read multiple bytes starting at a register address
+ * @param reg Starting register address
+ * @param buffer Buffer to fill with data
+ * @param len Number of bytes to read
+ * @return true if the operation succeeded, false otherwise
+ */
 bool Adafruit_AS7331::readRegisters(uint8_t reg, uint8_t *buffer, uint8_t len) {
   Adafruit_BusIO_Register bus_reg(_i2c_dev, reg, len, LSBFIRST);
   return bus_reg.read(buffer, len);
