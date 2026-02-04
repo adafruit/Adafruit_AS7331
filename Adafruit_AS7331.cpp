@@ -31,8 +31,11 @@
  *   UVB (λ=300nm): 347 counts/(µW/cm²)
  *   UVC (λ=260nm): 794 counts/(µW/cm²)
  */
+/** @brief Typical UVA responsivity counts/(µW/cm²) at GAIN=2048x, TIME=64ms */
 #define AS7331_SENS_UVA 385.0f
+/** @brief Typical UVB responsivity counts/(µW/cm²) at GAIN=2048x, TIME=64ms */
 #define AS7331_SENS_UVB 347.0f
+/** @brief Typical UVC responsivity counts/(µW/cm²) at GAIN=2048x, TIME=64ms */
 #define AS7331_SENS_UVC 794.0f
 
 /**
