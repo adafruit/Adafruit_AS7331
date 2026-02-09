@@ -1,0 +1,149 @@
+# AS7331 Register Quick Reference
+# Extracted from datasheet DS001047 v4-00
+
+## I2C Address
+Slave Address: 0x74-0x77 (1110_1_A1_A0)
+  - A1=0, A0=0: 0x74
+  - A1=0, A0=1: 0x75
+  - A1=1, A0=0: 0x76
+  - A1=1, A0=1: 0x77
+
+## Register Map
+
+### Configuration State Registers (Write)
+Addr  Name     Bits  Default  Description
+0x00  OSR      8     0x42     Operational State Register
+0x02  AGEN     8     0x21     API Generation Register (Read Only)
+0x06  CREG1    8     0xA6     Configuration Register 1 (Gain/Time)
+0x07  CREG2    8     0x40     Configuration Register 2 (Divider/TM)
+0x08  CREG3    8     0x50     Configuration Register 3 (Mode/Clock)
+0x09  BREAK    8     0x19     Break Time Register
+0x0A  EDGES    8     0x01     SYND Mode Edge Count
+0x0B  OPTREG   8     0x73     Option Register
+
+### Measurement State Registers (Read)
+Addr  Name        Bits  Description
+0x00  OSR+STATUS  16    OSR (LSB) + STATUS (MSB)
+0x01  TEMP        16    Temperature Result (12-bit value)
+0x02  MRES1       16    UVA Channel Result
+0x03  MRES2       16    UVB Channel Result
+0x04  MRES3       16    UVC Channel Result
+0x05  OUTCONV_L   16    Conversion Time Low (SYND mode)
+0x06  OUTCONV_H   16    Conversion Time High (SYND mode)
+
+## Bit Field Details
+
+### OSR (0x00) - Operational State Register
+Bit 7   SS       Start/Stop measurement (1=start, 0=stop)
+Bit 6   PD       Power Down (1=ON, 0=OFF) - default ON after reset
+Bit 5:4 Reserved
+Bit 3   SW_RES   Software Reset (write 1 to reset)
+Bit 2:0 DOS      Device Operational State:
+                   010 = Configuration State
+                   011 = Measurement State
+                   00x = NOP (no change)
+                   1xx = NOP (no change)
+
+### AGEN (0x02) - API Generation (Read-Only, Device ID)
+Bit 7:4 DEVID    Device ID = 0x2 (AS7331)
+Bit 3:0 MUT      Mutation number = 0x1
+                 Combined: 0x21
+
+### CREG1 (0x06) - Configuration Register 1
+Bit 7:4 GAIN     Gain setting (0-11):
+                   0 = 2048x  (highest sensitivity)
+                   1 = 1024x
+                   2 = 512x
+                   3 = 256x
+                   4 = 128x
+                   5 = 64x
+                   6 = 32x
+                   7 = 16x
+                   8 = 8x
+                   9 = 4x
+                   10= 2x     (default)
+                   11= 1x     (lowest sensitivity)
+                   
+Bit 3:0 TIME     Integration time (0-15):
+                   0  = 1ms     (1024 clocks, 10-bit)
+                   1  = 2ms     (2048 clocks, 11-bit)
+                   2  = 4ms     (4096 clocks, 12-bit)
+                   3  = 8ms     (8192 clocks, 13-bit)
+                   4  = 16ms    (16384 clocks, 14-bit)
+                   5  = 32ms    (32768 clocks, 15-bit)
+                   6  = 64ms    (65536 clocks, 16-bit) - default
+                   7  = 128ms   (131072 clocks, 17-bit)
+                   8  = 256ms   (262144 clocks, 18-bit)
+                   9  = 512ms   (524288 clocks, 19-bit)
+                   10 = 1024ms  (1048576 clocks, 20-bit)
+                   11 = 2048ms  (2097152 clocks, 21-bit)
+                   12 = 4096ms  (4194304 clocks, 22-bit)
+                   13 = 8192ms  (8388608 clocks, 23-bit)
+                   14 = 16384ms (16777216 clocks, 24-bit)
+                   15 = 1ms     (same as 0)
+
+### CREG2 (0x07) - Configuration Register 2
+Bit 7   Reserved
+Bit 6   EN_TM    Enable conversion time measurement (SYND mode)
+                   0 = Disabled (no TEMP measurement in SYND)
+                   1 = Enabled (default)
+Bit 5:4 Reserved
+Bit 3   EN_DIV   Enable digital divider
+                   0 = Disabled (default)
+                   1 = Enabled
+Bit 2:0 DIV      Divider value (0-7):
+                   Factor = 2^(1+DIV)
+                   0 = /2, 1 = /4, 2 = /8, 3 = /16
+                   4 = /32, 5 = /64, 6 = /128, 7 = /256
+
+### CREG3 (0x08) - Configuration Register 3
+Bit 7:6 MMODE    Measurement Mode:
+                   00 = CONT (continuous)
+                   01 = CMD (single command) - default
+                   10 = SYNS (sync start via SYN pin)
+                   11 = SYND (sync start+stop via SYN pin)
+Bit 5   Reserved
+Bit 4   SB       Standby mode
+                   0 = OFF (default)
+                   1 = ON
+Bit 3   RDYOD    READY pin output type
+                   0 = Push-Pull (default)
+                   1 = Open-Drain
+Bit 2   Reserved
+Bit 1:0 CCLK     Internal clock frequency:
+                   00 = 1.024 MHz (default)
+                   01 = 2.048 MHz
+                   10 = 4.096 MHz
+                   11 = 8.192 MHz
+
+### BREAK (0x09) - Break Time Register
+Bit 7:0 BREAK    Break time between measurements
+                   Time = BREAK * 8µs (0-2040µs)
+                   Default = 0x19 = 200µs
+                   Value 0 = minimum 3 clocks
+
+### EDGES (0x0A) - Edge Count (SYND mode)
+Bit 7:0 EDGES    Number of SYN falling edges to stop measurement
+                   Range: 1-255 (0 treated as 1)
+                   Default = 0x01
+
+### OPTREG (0x0B) - Option Register
+Bit 7:1 Reserved (write 0000000b recommended)
+Bit 0   INIT_IDX Index address initialization
+                   0 = Manual addressing only
+                   1 = Auto-init to 0x02 (Meas) or 0x00 (Config) - default
+
+### STATUS (0x00, MSB of read in Measurement state)
+Bit 7   OUTCONVOF  OUTCONV overflow (24-bit counter wrapped)
+Bit 6   MRESOF     Measurement result overflow (any channel)
+Bit 5   ADCOF      ADC overflow (input too high for gain)
+Bit 4   LDATA      Lost data (results overwritten before read)
+Bit 3   NDATA      New data available
+Bit 2   NOTREADY   Measurement in progress (inverse of READY pin)
+Bit 1   STANDBYSTATE  Actual standby state
+Bit 0   POWERSTATE    Actual power down state
+
+## Temperature Calculation
+TEMP register is 12-bit value
+T_chip (°C) = TEMP × 0.05 - 66.9
+Reference: TEMP = 0x922 (2338 dec) = 50°C
